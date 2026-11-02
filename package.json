@@ -1,0 +1,15 @@
+{
+  "name": "atmo-town",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @atmo-town/web",
+    "build": "npm run build -w @atmo-town/web",
+    "start": "npm run start -w @atmo-town/web",
+    "typecheck": "npm run typecheck -w @atmo-town/web",
+    "test": "npm run test -w @atmo-town/web"
+  }
+}
