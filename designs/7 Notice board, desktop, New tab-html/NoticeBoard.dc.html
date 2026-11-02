@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>atmo.town: Notice board</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&amp;family=Pixelify+Sans:wght@400;600&amp;display=swap">
+<style>
+body{margin:0}
+a{color:inherit}
+.at-note{transition:transform .15s}
+.at-note:hover{transform:rotate(0deg) translateY(-3px)!important}
+.at-note:focus-visible{outline:3px solid #ff7a45;outline-offset:3px}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: linear-gradient(180deg, {{t.sky2}} 0%, {{t.sky3}} 220px, {{t.page}} 520px); color: {{t.ink}}; font-family: 'Bricolage Grotesque', 'Trebuchet MS', sans-serif">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; padding: 14px 32px; background: {{t.deckA}}; border-bottom: 2px solid {{t.line}}">
+<a href="Main.dc.html" style="display: flex; align-items: center; gap: 10px; text-decoration: none; font-family: 'Pixelify Sans', monospace; font-size: 26px; font-weight: 600">
+<svg width="28" height="28" viewBox="0 0 14 14" shape-rendering="crispEdges" aria-hidden="true"><rect x="6" y="1" width="2" height="1" fill="{{t.ember}}"></rect><rect x="4" y="2" width="6" height="2" fill="{{t.ember}}"></rect><rect x="2" y="4" width="10" height="2" fill="{{t.ember}}"></rect><rect x="3" y="6" width="8" height="7" fill="{{t.wall}}" stroke="{{t.ink}}" stroke-width=".5"></rect><rect x="6" y="9" width="2" height="4" fill="{{t.ink}}"></rect><rect x="4" y="7" width="2" height="2" fill="{{t.win}}"></rect><rect x="8" y="7" width="2" height="2" fill="{{t.win}}"></rect></svg>
+atmo.town
+</a>
+<nav aria-label="Places" style="display: flex; flex-wrap: wrap; gap: 6px; flex: 1 1 520px">
+<a href="Main.dc.html" style="text-decoration: none; padding: 10px 16px; border-radius: 999px; font-weight: 600; font-size: 15px">Town square</a>
+<a href="NoticeBoard.dc.html" aria-current="page" style="text-decoration: none; padding: 10px 16px; border-radius: 999px; font-weight: 600; font-size: 15px; background: {{t.ink}}; color: {{t.deck}}">Notice board</a>
+<a href="EventPage.dc.html" style="text-decoration: none; padding: 10px 16px; border-radius: 999px; font-weight: 600; font-size: 15px">Town hall</a>
+<a href="Market.dc.html" style="text-decoration: none; padding: 10px 16px; border-radius: 999px; font-weight: 600; font-size: 15px">Market</a>
+<a href="CommunityCenter.dc.html" style="text-decoration: none; padding: 10px 16px; border-radius: 999px; font-weight: 600; font-size: 15px">Community center</a>
+</nav>
+<div style="display: flex; align-items: center; gap: 10px">
+<button type="button" onClick="{{toggleSky}}" style="display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 2px solid {{t.line}}; background: {{t.deck2}}; color: {{t.ink}}; font: 600 15px 'Bricolage Grotesque', sans-serif; cursor: pointer"><span aria-hidden="true" style="width: 12px; height: 12px; border-radius: 50%; background: {{t.glow}}"></span>{{skyLabel}}</button>
+<a href="Notifications.dc.html" aria-label="Mailbox, 2 unread" style="position: relative; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; border: 2px solid {{t.line}}; background: {{t.deck2}}">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10a5 5 0 0 1 10 0v9H4z"></path><path d="M14 10h6v9h-6"></path><path d="M9 3v4h4"></path></svg>
+<span aria-hidden="true" style="position: absolute; top: -4px; right: -4px; width: 14px; height: 14px; border-radius: 50%; background: {{t.ember}}; border: 2px solid {{t.deck}}"></span>
+</a>
+<a href="Profile.dc.html" aria-label="Your house" style="display: grid; place-items: end center; width: 44px; height: 44px; border-radius: 12px; border: 2px solid {{t.line}}; background: {{t.deck2}}; overflow: hidden">
+<svg width="27" height="36" viewBox="0 0 12 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="3" y="1" width="6" height="2" fill="#5a3a2a"></rect><rect x="2" y="2" width="1" height="5" fill="#5a3a2a"></rect><rect x="9" y="2" width="1" height="5" fill="#5a3a2a"></rect><rect x="3" y="3" width="6" height="4" fill="#f2c39b"></rect><rect x="4" y="4" width="1" height="1" fill="#1a1440"></rect><rect x="7" y="4" width="1" height="1" fill="#1a1440"></rect><rect x="2" y="7" width="8" height="5" fill="#2f8f83"></rect><rect x="1" y="8" width="1" height="3" fill="#f2c39b"></rect><rect x="10" y="8" width="1" height="3" fill="#f2c39b"></rect><rect x="3" y="12" width="2" height="3" fill="#3a3178"></rect><rect x="7" y="12" width="2" height="3" fill="#3a3178"></rect></svg>
+</a>
+</div>
+</header>
+
+<main style="max-width: 1376px; margin: 0 auto; padding: 28px 32px 56px; display: flex; flex-direction: column; gap: 20px">
+
+<div style="display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px">
+<div>
+<p style="margin: 0 0 4px; font-family: 'Pixelify Sans', monospace; font-size: 18px; color: {{t.dim}}">Pinned on the</p>
+<h1 style="margin: 0; font-size: 56px; line-height: 1; font-weight: 800; letter-spacing: -0.02em">Notice board</h1>
+<p style="margin: 10px 0 0; max-width: 560px; font-size: 17px; line-height: 1.45; font-weight: 600; color: {{t.dim}}">Ideas that would make the Atmosphere better. React if you'd use one, build it, or help.</p>
+</div>
+<a href="PostIdea.dc.html" style="display: inline-flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 24px; border-radius: 999px; background: {{t.ember}}; color: {{t.onEmber}}; text-decoration: none; font-weight: 800; font-size: 17px">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+Post an idea
+</a>
+</div>
+
+<div role="tablist" aria-label="Filter ideas" style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{tabs}}" as="tab" hint-placeholder-count="5">
+<button type="button" role="tab" aria-selected="{{tab.selected}}" onClick="{{tab.pick}}" style="min-height: 44px; padding: 0 18px; border-radius: 12px; border: 2px solid {{tab.border}}; background: {{tab.bg}}; color: {{tab.fg}}; font: 600 15px 'Bricolage Grotesque', sans-serif; cursor: pointer">{{tab.label}}</button>
+</sc-for>
+</div>
+
+<section aria-label="Ideas" style="padding: 28px; border-radius: 22px; background: {{t.board}}; border: 10px solid {{t.wood}}; box-shadow: inset 0 0 0 2px rgba(0,0,0,.12)">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 28px 24px">
+<sc-for list="{{ideas}}" as="idea" hint-placeholder-count="6">
+<a class="at-note" href="IdeaPage.dc.html" style="position: relative; display: flex; flex-direction: column; gap: 12px; padding: 26px 22px 20px; background: {{idea.paper}}; color: #1a1440; text-decoration: none; transform: rotate({{idea.tilt}}); box-shadow: 0 10px 18px -8px rgba(30,15,10,.45)">
+<span aria-hidden="true" style="position: absolute; top: 8px; left: 50%; translate: -50% 0; width: 14px; height: 14px; border-radius: 50%; background: {{idea.pin}}; box-shadow: 0 2px 0 rgba(0,0,0,.25)"></span>
+<span style="align-self: flex-start; padding: 4px 10px; border-radius: 6px; background: rgba(26,20,64,.08); font-family: 'Pixelify Sans', monospace; font-size: 14px">{{idea.status}}</span>
+<span style="font-size: 22px; line-height: 1.15; font-weight: 800; text-wrap: balance">{{idea.title}}</span>
+<span style="font-size: 15px; line-height: 1.45; color: #3b3360">{{idea.pitch}}</span>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #3b3360">
+<svg width="18" height="24" viewBox="0 0 12 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="3" y="1" width="6" height="2" fill="{{idea.hair}}"></rect><rect x="3" y="3" width="6" height="4" fill="#f2c39b"></rect><rect x="4" y="4" width="1" height="1" fill="#1a1440"></rect><rect x="7" y="4" width="1" height="1" fill="#1a1440"></rect><rect x="2" y="7" width="8" height="5" fill="{{idea.shirt}}"></rect><rect x="3" y="12" width="2" height="3" fill="#3a3178"></rect><rect x="7" y="12" width="2" height="3" fill="#3a3178"></rect></svg>
+@{{idea.author}}
+</span>
+<span style="display: flex; flex-wrap: wrap; gap: 6px; padding-top: 10px; border-top: 2px dashed rgba(26,20,64,.18)">
+<span style="padding: 5px 10px; border-radius: 999px; background: #fff; font-size: 13px; font-weight: 600">I'd use this · {{idea.use}}</span>
+<span style="padding: 5px 10px; border-radius: 999px; background: #fff; font-size: 13px; font-weight: 600">I'd build this · {{idea.build}}</span>
+<span style="padding: 5px 10px; border-radius: 999px; background: #fff; font-size: 13px; font-weight: 600">I'd help · {{idea.help}}</span>
+</span>
+</a>
+</sc-for>
+</div>
+</section>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"sky":{"editor":"enum","options":["day","dusk"],"default":"day"},"$preview":{"width":1440,"height":1180}}'>
+const AT_THEME = {
+  day: { sky2: '#86cff3', sky3: '#bce6f7', page: '#fdf4e6', deck: '#fffaf2', deck2: '#fff3e2', deckA: 'rgba(255,250,242,.92)', line: '#e8c9a3', ink: '#1a1440', dim: '#5f5585', ember: '#c43c14', onEmber: '#fff6ef', glow: '#e0a23a', wall: '#fff3e2', win: '#ffe7a3', wood: '#9a5f36', board: '#c98b55' },
+  dusk: { sky2: '#241a52', sky3: '#5c2f66', page: '#0c0e2e', deck: '#17123d', deck2: '#1f1a4e', deckA: 'rgba(23,18,61,.9)', line: '#3a3178', ink: '#f2eefc', dim: '#a9a0cd', ember: '#ff7a45', onEmber: '#2a0f04', glow: '#ffc46b', wall: '#2a2360', win: '#ffc46b', wood: '#4a2f45', board: '#6b4a5e' }
+};
+const AT_TABS = ['New', 'Most wanted', 'Needs builders', 'Shipped', 'Spotted on Bluesky'];
+class Component extends DCLogic {
+  state = { tab: 'New' };
+  renderVals() {
+    const sky = this.state.sky || this.props.sky || 'day';
+    const t = AT_THEME[sky] || AT_THEME.day;
+    const tabs = AT_TABS.map((label) => {
+      const on = this.state.tab === label;
+      return { label, selected: on ? 'true' : 'false', bg: on ? t.ink : t.deck, fg: on ? t.deck : t.ink, border: on ? t.ink : t.line, pick: () => this.setState({ tab: label }) };
+    });
+    const papers = ['#fff8dc', '#e3f1ff', '#ffe3ea', '#e6f7dc', '#fff8dc', '#efe6ff'];
+    const tilts = ['-1.2deg', '0.8deg', '-0.4deg', '1.1deg', '-0.9deg', '0.5deg'];
+    const pins = ['#c43c14', '#1a7f96', '#7a5ac8', '#c43c14', '#2f8f83', '#1a7f96'];
+    const ideas = [
+      { title: 'Atmosphere Wrapped, made with Teal', pitch: 'A year-end recap of what you listened to, posted, and built across Atmosphere apps.', author: 'maple.example', status: 'Has builders', use: 31, build: 2, help: 4, hair: '#5a3a2a', shirt: '#2f8f83' },
+      { title: 'Reading lists any app can show', pitch: 'One list of books and articles you can carry between reader apps.', author: 'fern.example', status: 'Needs builders', use: 18, build: 0, help: 2, hair: '#e8c34a', shirt: '#d0583c' },
+      { title: 'RSVPs that every calendar can read', pitch: 'Say you are going once and have it show up wherever you keep your schedule.', author: 'otter.example', status: 'Being built', use: 24, build: 3, help: 1, hair: '#1a1440', shirt: '#7a5ac8' },
+      { title: 'A first-week guide for new protocol devs', pitch: 'A friendly path from "what is a PDS" to shipping a tiny app.', author: 'juniper.example', status: 'Needs builders', use: 12, build: 0, help: 5, hair: '#c94f7c', shirt: '#e0a23a' },
+      { title: 'Recipe cards you can post and remix', pitch: 'Share a recipe once and let cooking apps show it, with credit to who made it.', author: 'pebble.example', status: 'Shipped', use: 40, build: 2, help: 3, hair: '#3a2a1a', shirt: '#3f7fb0' },
+      { title: 'Neighborhood lost and found', pitch: 'A local feed for lost keys, found cats, and borrowed ladders.', author: 'wren.example', status: 'Has builders', use: 9, build: 1, help: 0, hair: '#8a3a2a', shirt: '#4f9a52' }
+    ].map((idea, i) => ({ ...idea, paper: papers[i], tilt: tilts[i], pin: pins[i] }));
+    return {
+      t,
+      skyLabel: sky === 'day' ? 'Dusk' : 'Day',
+      toggleSky: () => this.setState({ sky: sky === 'day' ? 'dusk' : 'day' }),
+      tabs,
+      ideas
+    };
+  }
+}
+</script>
+</body>
+</html>
