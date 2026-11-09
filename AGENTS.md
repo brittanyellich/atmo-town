@@ -1,0 +1,86 @@
+# Working on atmo.town
+
+atmo.town is a cozy gathering place for people building on the Atmosphere
+(AT Protocol): share ideas, find collaborators, and run community events.
+Read the relevant files in `specs/` before changing a feature. `designs/` holds
+reference mockups, not the production app. Specs include proposed work; check
+the code before treating a proposed package or integration as implemented.
+
+## Setup and verification
+
+The Day 1 app is in [PR #1](https://github.com/brittanyellich/atmo-town/pull/1).
+Until it merges, `main` contains specs and designs without `package.json`.
+Do not report application checks as passing on that checkout. On a checkout
+containing the app, use Node 22 or newer and run from the repository root:
+
+```sh
+npm ci
+npm run dev
+# Visit http://127.0.0.1:5173 (not localhost, for local AT Protocol OAuth).
+```
+
+Before delivering an application change, run:
+
+```sh
+npm test
+npm run typecheck
+npm run build
+git diff --check
+```
+
+There are currently no lint or formatting scripts in the Day 1 app. Follow
+surrounding formatting and report unavailable checks explicitly. For specs or
+instructions alone, check referenced paths and commands and run
+`git diff --check`; do not claim runtime validation. For behavior changes,
+verify the ticket's acceptance criteria, including a relevant edge or failure
+case. A clean AI review alone does not establish that the behavior works.
+
+## Project rules
+
+1. **The person's repo owns their idea.** Applies to idea creation and other
+   person-authored public AT Protocol records. Write through the authenticated
+   person's OAuth session to their PDS; a local index is a rebuildable view,
+   not a replacement for that record. Forwarded Bluesky ideas are a separate
+   suggestion owned by the town account until claimed, as described in
+   `specs/Ideas app.md`. This keeps authorship and portability intact without
+   pretending the town can write to someone else's repo.
+
+2. **Sealed means sealed.** Applies to white elephant submissions and draw
+   state. Keep sealed entry contents in private server-side storage; never
+   publish them as public AT Protocol records or expose them in public
+   responses, logs, or client bundles before the authorized reveal. Do not
+   treat submissions or draw state as disposable index data. The event needs
+   both secrecy before the draw and durable state that cannot be rebuilt from
+   public records (`specs/Tech stack.md`, `specs/Domain White Elephant.md`).
+
+3. **The lexicon gets the last word.** Applies to `town.atmo.*` record writes.
+   Keep schemas in `packages/lexicons` as the source of truth and validate
+   records on the server before writing to a PDS. Client form validation helps
+   people correct input but cannot replace record validation. When a schema
+   changes, update affected types, parsers, and checks together so the UI
+   cannot silently emit a different protocol.
+
+4. **Credentials stay on the server.** Applies to OAuth, sessions, and service
+   integrations. Keep token and key handling in server-only modules; never
+   return or log credentials or commit local session data. The Day 1 JSON
+   session store and loopback OAuth setup are development-only; replace them
+   with appropriate durable storage and hosted OAuth configuration before
+   deployment. Otherwise a working local demo can become an unsafe deployment.
+
+5. **The town must work without the scenery.** Applies to production UI,
+   especially the map, forms, and animation. Use semantic links and controls
+   with labels, keyboard access, and visible focus. Provide a plain list of
+   destinations alongside the map and honor reduced motion for walking or
+   other animated scenery. Reuse the app's CSS color variables instead of
+   copying mockup colors into components. The cozy visual style should remain
+   usable with assistive technology and consistent across Day/Dusk themes.
+
+## Delivery
+
+Use an isolated worktree and a `codex/<short-task-name>` branch based on the
+current remote default branch; preserve existing edits. Take backlog tickets
+one at a time, with a separate branch and PR for each. Include the ticket link,
+acceptance criteria, validation results, and known limitations in the PR.
+Run Roast when available, investigate Qodo findings against the code, and
+repeat affected checks after fixes. Stop and explain blockers rather than
+claiming a review or check ran when it did not. Leave merging to the human.
