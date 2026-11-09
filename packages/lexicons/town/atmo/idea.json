@@ -1,0 +1,48 @@
+{
+  "lexicon": 1,
+  "id": "town.atmo.idea",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "An idea for something that would help the Atmosphere, posted to atmo.town.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["title", "pitch", "createdAt"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "A short name for the idea.",
+            "minLength": 1,
+            "maxLength": 1000,
+            "maxGraphemes": 100
+          },
+          "pitch": {
+            "type": "string",
+            "description": "What it is, who it helps, and what kind of help the author is looking for.",
+            "minLength": 1,
+            "maxLength": 6000,
+            "maxGraphemes": 600
+          },
+          "tags": {
+            "type": "array",
+            "maxLength": 8,
+            "items": { "type": "string", "maxLength": 320, "maxGraphemes": 32 }
+          },
+          "links": {
+            "type": "array",
+            "maxLength": 5,
+            "items": { "type": "string", "format": "uri" }
+          },
+          "status": {
+            "type": "string",
+            "description": "Set by the author. Shipped is derived from build links, not stored here.",
+            "knownValues": ["open", "building"],
+            "default": "open"
+          },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}
