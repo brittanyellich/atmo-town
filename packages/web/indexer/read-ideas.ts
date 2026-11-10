@@ -1,6 +1,6 @@
 import { DatabaseSync } from "node:sqlite";
 
-type IdeaCursor = { createdAt: number; did: string; rkey: string };
+export type IdeaCursor = { createdAt: number; did: string; rkey: string };
 type IndexedIdea = IdeaCursor & { title: string; pitch: string };
 
 const PAGE_SIZE = 25;

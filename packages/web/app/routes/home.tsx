@@ -69,6 +69,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           Post an idea that would help the Atmosphere, and find people who want to build it with you.
         </p>
         <div className="actions">
+          <Link to="/notice-board" className="pill">Browse ideas</Link>
           <Link to="/login?returnTo=%2Fideas%2Fnew" className="button">Sign in to post an idea</Link>
         </div>
       </main>
@@ -80,6 +81,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     <main className="main">
       <h1 className="title">Town square</h1>
       <div className="actions">
+        <Link to="/notice-board" className="pill">Browse ideas</Link>
         <Link to="/ideas/new" className="button">Post an idea</Link>
       </div>
       <section aria-labelledby="your-ideas" className="board">
