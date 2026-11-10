@@ -125,6 +125,10 @@ describe("emoji-heavy input", () => {
     if (!result.ok) {
       expect(Object.keys(result.errors)).toEqual([field]);
       expect(result.errors[field as "title" | "pitch" | "tags"]).toContain("Shorten");
+      expect(result.errors[field as "title" | "pitch" | "tags"]).toContain(`${bytes}-byte limit`);
+      expect(result.errors[field as "title" | "pitch" | "tags"]).toContain(
+        `${new TextEncoder().encode(fields[field as keyof typeof fields]).byteLength} UTF-8 bytes`,
+      );
       expect(result.fields).toEqual(fields);
     }
   });
@@ -146,11 +150,13 @@ describe("emoji-heavy input", () => {
   });
 
   it("checks individual trimmed tags after parsing the list", () => {
-    const tags = ` music, ${"👩‍👩‍👧‍👦".repeat(13)}, music `;
+    const tags = ` music, Music, , ${"👩‍👩‍👧‍👦".repeat(13)}, music `;
     const result = parseIdeaForm(form({ title: "T", pitch: "P", tags }), NOW);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(Object.keys(result.errors)).toEqual(["tags"]);
+      expect(result.errors.tags).toContain("Shorten comma-separated tag 4");
+      expect(result.errors.tags).toContain("325 UTF-8 bytes exceeds the 320-byte limit");
       expect(result.fields.tags).toBe(tags.trim());
     }
   });

@@ -90,7 +90,7 @@ export function parseIdeaForm(form: FormData, now: Date = new Date()): ParseResu
   } else if (countGraphemes(fields.title) > LIMITS.titleGraphemes) {
     errors.title = `Use ${LIMITS.titleGraphemes} characters or fewer for the title.`;
   } else if (encoder.encode(fields.title).byteLength > LIMITS.titleBytes) {
-    errors.title = "Shorten the title; complex emoji and combined characters can take extra space.";
+    errors.title = `Shorten the title: ${encoder.encode(fields.title).byteLength} UTF-8 bytes exceeds the ${LIMITS.titleBytes}-byte limit. Complex emoji and combined characters take extra space.`;
   }
 
   if (!fields.pitch) {
@@ -98,7 +98,7 @@ export function parseIdeaForm(form: FormData, now: Date = new Date()): ParseResu
   } else if (countGraphemes(fields.pitch) > LIMITS.pitchGraphemes) {
     errors.pitch = `Use ${LIMITS.pitchGraphemes} characters or fewer for the pitch.`;
   } else if (encoder.encode(fields.pitch).byteLength > LIMITS.pitchBytes) {
-    errors.pitch = "Shorten the pitch; complex emoji and combined characters can take extra space.";
+    errors.pitch = `Shorten the pitch: ${encoder.encode(fields.pitch).byteLength} UTF-8 bytes exceeds the ${LIMITS.pitchBytes}-byte limit. Complex emoji and combined characters take extra space.`;
   }
 
   if (fields.link && !isHttpUrl(fields.link)) {
@@ -110,8 +110,12 @@ export function parseIdeaForm(form: FormData, now: Date = new Date()): ParseResu
     errors.tags = `Use ${LIMITS.tags} tags or fewer.`;
   } else if (tags.some((tag) => countGraphemes(tag) > LIMITS.tagGraphemes)) {
     errors.tags = `Use ${LIMITS.tagGraphemes} characters or fewer for each tag.`;
-  } else if (tags.some((tag) => encoder.encode(tag).byteLength > LIMITS.tagBytes)) {
-    errors.tags = "Shorten each tag; complex emoji and combined characters can take extra space.";
+  } else {
+    const oversizedTag = tags.findIndex((tag) => encoder.encode(tag).byteLength > LIMITS.tagBytes);
+    if (oversizedTag !== -1) {
+      const tagNumber = fields.tags.split(",").findIndex((tag) => tag.trim() === tags[oversizedTag]) + 1;
+      errors.tags = `Shorten comma-separated tag ${tagNumber}: ${encoder.encode(tags[oversizedTag]).byteLength} UTF-8 bytes exceeds the ${LIMITS.tagBytes}-byte limit. Complex emoji and combined characters take extra space.`;
+    }
   }
 
   if (Object.keys(errors).length > 0) return { ok: false, errors, fields };
