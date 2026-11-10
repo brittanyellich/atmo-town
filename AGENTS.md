@@ -60,6 +60,16 @@ case. A clean AI review alone does not establish that the behavior works.
    changes, update affected types, parsers, and checks together so the UI
    cannot silently emit a different protocol.
 
+   For idea title, pitch, and individual tag validation in
+   `packages/web/app/lib/idea.ts`, enforce both the lexicon's grapheme and
+   UTF-8 byte limits. Changes to these checks must retain tests for exact
+   limits and over-limit input, including complex multi-code-point graphemes.
+   Return field-specific errors and preserve submitted input for correction;
+   keep final server-side lexicon validation. A family emoji can fit the
+   character limit yet exceed the byte limit, so counting characters alone
+   gives misleading form guidance. This boundary was exposed by the Day 1
+   Qodo review and fixed in [PR #8](https://github.com/brittanyellich/atmo-town/pull/8).
+
 4. **Credentials stay on the server.** Applies to OAuth, sessions, and service
    integrations. Keep token and key handling in server-only modules; never
    return or log credentials or commit local session data. The Day 1 JSON
