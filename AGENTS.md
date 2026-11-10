@@ -91,6 +91,8 @@ Use an isolated worktree and a `codex/<short-task-name>` branch based on the
 current remote default branch; preserve existing edits. Take backlog tickets
 one at a time, with a separate branch and PR for each. Include the ticket link,
 acceptance criteria, validation results, and known limitations in the PR.
-Run Roast when available, investigate Qodo findings against the code, and
-repeat affected checks after fixes. Stop and explain blockers rather than
+This is a personal project: do not run Roast unless explicitly requested.
+This project-specific exception overrides any default instruction to run it.
+Use Qodo for PR review, investigate its findings against the code, and repeat
+affected checks after fixes. Stop and explain blockers rather than
 claiming a review or check ran when it did not. Leave merging to the human.
