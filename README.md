@@ -28,3 +28,20 @@ npm run typecheck
 ## License
 
 MIT
+
+### Local idea index
+
+Run a Tap instance configured to discover and backfill `town.atmo.idea` records
+and deliver them over WebSocket with acknowledgments enabled. See the
+[Tap setup instructions](https://github.com/bluesky-social/indigo/tree/main/cmd/tap).
+Start the worker from the repository root:
+
+```sh
+ATMO_TAP_URL=http://127.0.0.1:2480 npm run index:ideas
+```
+
+Set `ATMO_TAP_PASSWORD` in the worker environment if the Tap server requires
+authentication. The worker writes a rebuildable SQLite index at
+`.data/ideas.sqlite` by default. Set `ATMO_IDEA_INDEX_PATH` to use a different
+file. Run one writer per index. To rebuild a lost index, replay or backfill
+from Tap again; reconnecting alone does not replay events already acknowledged.
