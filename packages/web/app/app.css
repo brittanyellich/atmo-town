@@ -231,3 +231,9 @@ code.uri { font-size: 13px; overflow-wrap: anywhere; }
 @media (prefers-reduced-motion: reduce) {
   .note, .note:nth-child(even), .posted .note { transform: none; }
 }
+
+.note h3 { margin: 0; }
+.idea-detail { overflow-wrap: anywhere; }
+.idea-detail h1, .idea-detail p { margin: 0; }
+.note a { color: inherit; }
+.note a:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }

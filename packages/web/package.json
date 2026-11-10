@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@atmo-town/lexicons": "*",
+    "@atproto-labs/did-resolver": "^0.3.11",
+    "@atproto-labs/fetch-node": "^0.4.5",
     "@atproto/api": "^0.30.0",
     "@atproto/lexicon": "*",
     "@atproto/oauth-client-node": "^0.5.13",
