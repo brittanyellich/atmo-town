@@ -15,13 +15,18 @@ type IdeaView = { uri: string; title: string; pitch: string; createdAt?: string 
 export async function loader({ request }: Route.LoaderArgs) {
   if (!(await getSignedInDid(request))) return { signedIn: false as const };
 
+  const cursor = new URL(request.url).searchParams.get("cursor") || undefined;
   const { agent, did } = await requireAgent(request);
   const handle = (await lookupHandle(agent, did)) ?? did;
   let ideas: IdeaView[] = [];
   let loadError: string | undefined;
+  let paginationError: string | undefined;
+  let nextCursor: string | undefined;
   try {
     // Until the indexer exists, read ideas straight from the signed-in person's repo.
-    const res = await agent.com.atproto.repo.listRecords({ repo: did, collection: IDEA_COLLECTION, limit: 50 });
+    const res = await agent.com.atproto.repo.listRecords({
+      repo: did, collection: IDEA_COLLECTION, limit: 50, ...(cursor ? { cursor } : {}),
+    });
     ideas = res.data.records.map((r) => {
       const value = r.value as Partial<IdeaView>;
       return {
@@ -31,11 +36,26 @@ export async function loader({ request }: Route.LoaderArgs) {
         createdAt: typeof value.createdAt === "string" ? value.createdAt : undefined,
       };
     });
+    // A cursor can describe the last record even on a final page. Probe once,
+    // without consuming that record from the next displayed page.
+    if (res.data.cursor) {
+      try {
+        const probe = await agent.com.atproto.repo.listRecords({
+          repo: did, collection: IDEA_COLLECTION, limit: 1, cursor: res.data.cursor,
+        });
+        if (probe.data.records.length > 0) nextCursor = res.data.cursor;
+      } catch (err) {
+        console.error("Pagination check failed", err);
+        paginationError = "Couldn't check for another page. Your ideas on this page are still available.";
+      }
+    }
   } catch (err) {
     console.error("listRecords failed", err);
     loadError = "Couldn't load your ideas from your PDS.";
   }
-  return { signedIn: true as const, handle, ideas, loadError };
+  const nextPage = nextCursor ? `/?${new URLSearchParams({ cursor: nextCursor })}` : undefined;
+  const currentPage = cursor ? `/?${new URLSearchParams({ cursor })}` : "/";
+  return { signedIn: true as const, handle, ideas, loadError, paginationError, nextPage, currentPage, hasCursor: !!cursor };
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
@@ -53,7 +73,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     );
   }
 
-  const { handle, ideas, loadError } = loaderData;
+  const { handle, ideas, loadError, paginationError, nextPage, currentPage, hasCursor } = loaderData;
   return (
     <main className="main">
       <h1 className="title">Town square</h1>
@@ -63,8 +83,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       <section aria-labelledby="your-ideas" className="board">
         <h2 id="your-ideas" className="board-label" style={{ margin: 0 }}>Your ideas</h2>
         {loadError && <p className="form-error">{loadError}</p>}
+        {paginationError && <p className="form-error" role="alert">{paginationError}</p>}
         {!loadError && ideas.length === 0 && (
-          <p style={{ color: "var(--paper)", margin: 0 }}>Nothing pinned yet.</p>
+          <p style={{ color: "var(--paper)", margin: 0 }}>
+            {hasCursor ? "No ideas on this page." : "Nothing pinned yet."}
+          </p>
         )}
         {ideas.map((idea) => (
           <article key={idea.uri} className="note">
@@ -77,6 +100,13 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           </article>
         ))}
       </section>
+      {(hasCursor || nextPage || paginationError) && (
+        <nav aria-label="Idea pages" className="actions">
+          {hasCursor && <Link to="/" className="pill">First page</Link>}
+          {!loadError && nextPage && <Link to={nextPage} className="pill">Next page</Link>}
+          {paginationError && <Link to={currentPage} reloadDocument className="pill">Check next page again</Link>}
+        </nav>
+      )}
     </main>
   );
 }
