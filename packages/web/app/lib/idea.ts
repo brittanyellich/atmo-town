@@ -84,24 +84,24 @@ export function parseIdeaForm(form: FormData, now: Date = new Date()): ParseResu
   if (!fields.title) {
     errors.title = "Give the idea a short title.";
   } else if (countGraphemes(fields.title) > LIMITS.titleGraphemes) {
-    errors.title = `Keep the title under ${LIMITS.titleGraphemes} characters.`;
+    errors.title = `Use ${LIMITS.titleGraphemes} characters or fewer for the title.`;
   }
 
   if (!fields.pitch) {
     errors.pitch = "Add a sentence or two about the idea.";
   } else if (countGraphemes(fields.pitch) > LIMITS.pitchGraphemes) {
-    errors.pitch = `Keep the pitch under ${LIMITS.pitchGraphemes} characters.`;
+    errors.pitch = `Use ${LIMITS.pitchGraphemes} characters or fewer for the pitch.`;
   }
 
   if (fields.link && !isHttpUrl(fields.link)) {
-    errors.link = "Links need to start with https://";
+    errors.link = "Links need to start with http:// or https://";
   }
 
   const tags = parseTags(fields.tags);
   if (tags.length > LIMITS.tags) {
     errors.tags = `Use ${LIMITS.tags} tags or fewer.`;
   } else if (tags.some((tag) => countGraphemes(tag) > LIMITS.tagGraphemes)) {
-    errors.tags = `Keep each tag under ${LIMITS.tagGraphemes} characters.`;
+    errors.tags = `Use ${LIMITS.tagGraphemes} characters or fewer for each tag.`;
   }
 
   if (Object.keys(errors).length > 0) return { ok: false, errors, fields };
