@@ -8,10 +8,7 @@ the code before treating a proposed package or integration as implemented.
 
 ## Setup and verification
 
-The Day 1 app is in [PR #1](https://github.com/brittanyellich/atmo-town/pull/1).
-Until it merges, `main` contains specs and designs without `package.json`.
-Do not report application checks as passing on that checkout. On a checkout
-containing the app, use Node 22 or newer and run from the repository root:
+Use Node 22 or newer and run from the repository root:
 
 ```sh
 npm ci
@@ -28,7 +25,7 @@ npm run build
 git diff --check
 ```
 
-There are currently no lint or formatting scripts in the Day 1 app. Follow
+There are currently no lint or formatting scripts in the app. Follow
 surrounding formatting and report unavailable checks explicitly. For specs or
 instructions alone, check referenced paths and commands and run
 `git diff --check`; do not claim runtime validation. For behavior changes,
@@ -60,9 +57,18 @@ case. A clean AI review alone does not establish that the behavior works.
    changes, update affected types, parsers, and checks together so the UI
    cannot silently emit a different protocol.
 
+   For idea title, pitch, and individual tag validation in
+   `packages/web/app/lib/idea.ts`, enforce both the lexicon's grapheme and
+   UTF-8 byte limits. Changes to these checks must retain tests for exact
+   limits and over-limit input, including complex multi-code-point graphemes.
+   Return field-specific errors and preserve submitted input for correction;
+   keep final server-side lexicon validation. A family emoji can fit the
+   character limit yet exceed the byte limit, so counting characters alone
+   gives misleading form guidance.
+
 4. **Credentials stay on the server.** Applies to OAuth, sessions, and service
    integrations. Keep token and key handling in server-only modules; never
-   return or log credentials or commit local session data. The Day 1 JSON
+   return or log credentials or commit local session data. The JSON
    session store and loopback OAuth setup are development-only; replace them
    with appropriate durable storage and hosted OAuth configuration before
    deployment. Otherwise a working local demo can become an unsafe deployment.
@@ -81,6 +87,12 @@ Use an isolated worktree and a `codex/<short-task-name>` branch based on the
 current remote default branch; preserve existing edits. Take backlog tickets
 one at a time, with a separate branch and PR for each. Include the ticket link,
 acceptance criteria, validation results, and known limitations in the PR.
-Run Roast when available, investigate Qodo findings against the code, and
-repeat affected checks after fixes. Stop and explain blockers rather than
-claiming a review or check ran when it did not. Leave merging to the human.
+This is a personal project: do not run Roast unless explicitly requested.
+This project-specific exception overrides any default instruction to run it.
+Use Qodo for PR review, investigate its findings against the code, and repeat
+affected checks after fixes. Before handing a PR over for a merge decision,
+record the Qodo review link, reviewed commit, and assessment of findings in
+the PR. If the review is absent or covers an older commit, report that gap
+explicitly rather than claiming review is complete. Stop and explain blockers
+rather than claiming a review or check ran when it did not. Leave merging to
+the human.
