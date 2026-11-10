@@ -1,6 +1,9 @@
 import { beforeEach, expect, it, vi } from "vitest";
 import { ideaPath } from "~/lib/idea-path.server";
-import { loader } from "./ideas.detail";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { MemoryRouter, Route, Routes } from "react-router";
+import IdeaDetail, { loader } from "./ideas.detail";
 
 const fetchRecord = vi.hoisted(() => vi.fn());
 vi.mock("@atproto-labs/fetch-node", async (importOriginal) => ({
@@ -57,4 +60,51 @@ it.each([
   expect(result.init?.status).toBe(expected);
   expect(result.data.idea).toBeNull();
   expect(result.data.unavailable).toBe(expected === 503);
+});
+
+const upstreamDetail = "upstream-private-diagnostic-fixture";
+
+it.each([
+  {
+    stage: "resolve DID",
+    errorType: "Error",
+    fail: () => fetchRecord.mockReset().mockRejectedValueOnce(new Error(upstreamDetail)),
+  },
+  {
+    stage: "fetch PDS record",
+    errorType: "TypeError",
+    fail: () => fetchRecord.mockRejectedValueOnce(new TypeError(upstreamDetail)),
+  },
+  {
+    stage: "decode PDS record",
+    errorType: "SyntaxError",
+    fail: () => fetchRecord.mockResolvedValueOnce(new Response(upstreamDetail)),
+  },
+])("logs a sanitized $stage failure and renders recovery", async ({ stage, errorType, fail }) => {
+  const log = vi.spyOn(console, "error").mockImplementation(() => {});
+  try {
+    fail();
+    const result = await load();
+
+    expect(log.mock.calls).toEqual([["Public idea read failed", { stage, errorType }]]);
+    expect(result.init?.status).toBe(503);
+    expect(result.data).toEqual({ idea: null, unavailable: true });
+
+    const path = ideaPath(uri);
+    if (!path) throw new Error("Invalid test idea URI");
+    const html = renderToStaticMarkup(createElement(
+      MemoryRouter,
+      { initialEntries: [path] },
+      createElement(Routes, {}, createElement(Route, {
+        path: "/ideas/:did/:key",
+        element: createElement(IdeaDetail, { loaderData: result.data } as Parameters<typeof IdeaDetail>[0]),
+      })),
+    ));
+    expect(html).toContain("Idea unavailable");
+    expect(decodeURIComponent(html)).toContain(`href="${decodeURIComponent(path)}"`);
+    expect(html).toContain("Try again");
+    expect(html).not.toContain(upstreamDetail);
+  } finally {
+    log.mockRestore();
+  }
 });
