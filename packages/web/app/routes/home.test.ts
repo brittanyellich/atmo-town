@@ -25,9 +25,11 @@ beforeEach(() => {
 });
 
 describe("home pagination", () => {
-  it("makes 51 ideas reachable in two bounded requests and round-trips the opaque cursor", async () => {
+  it("makes 51 ideas reachable with bounded lookahead and round-trips the opaque cursor", async () => {
     mocks.listRecords.mockResolvedValueOnce({ data: { records: Array.from({ length: 50 }, (_, i) => record(i)), cursor: token } })
-      .mockResolvedValueOnce({ data: { records: [record(50)], cursor: "last-record" } });
+      .mockResolvedValueOnce({ data: { records: [record(50)], cursor: "last-record" } })
+      .mockResolvedValueOnce({ data: { records: [record(50)], cursor: "last-record" } })
+      .mockResolvedValueOnce({ data: { records: [] } });
     const first = await load();
     if (!first.signedIn) throw new Error("Expected signed-in data");
     expect(first.ideas).toHaveLength(50);
@@ -39,7 +41,9 @@ describe("home pagination", () => {
     expect(second.ideas.map((idea) => idea.title)).toEqual(["Idea 50"]);
     expect(mocks.listRecords.mock.calls).toEqual([
       [{ repo: DID, collection: "town.atmo.idea", limit: 50 }],
+      [{ repo: DID, collection: "town.atmo.idea", limit: 1, cursor: token }],
       [{ repo: DID, collection: "town.atmo.idea", limit: 50, cursor: token }],
+      [{ repo: DID, collection: "town.atmo.idea", limit: 1, cursor: "last-record" }],
     ]);
     expect(render(second)).toContain('href="/"');
     expect(render(second)).toContain("First page");
@@ -53,11 +57,38 @@ describe("home pagination", () => {
     expect(mocks.listRecords).toHaveBeenCalledTimes(1);
   });
 
-  it.each([0, 1, 49])("omits next-page navigation for a short page of %i records even with a cursor", async (count) => {
-    mocks.listRecords.mockResolvedValue({ data: { records: Array.from({ length: count }, (_, i) => record(i)), cursor: "last-record" } });
+  it.each([0, 1, 49, 50])("omits next-page navigation after %i records when lookahead is empty", async (count) => {
+    mocks.listRecords.mockResolvedValueOnce({ data: { records: Array.from({ length: count }, (_, i) => record(i)), cursor: "last-record" } })
+      .mockResolvedValueOnce({ data: { records: [] } });
     const data = await load();
     expect(render(data)).not.toContain("Next page");
-    expect(mocks.listRecords).toHaveBeenCalledTimes(1);
+    expect(mocks.listRecords).toHaveBeenCalledTimes(2);
+  });
+
+  it("allows a short intermediate page when lookahead confirms more records", async () => {
+    mocks.listRecords.mockResolvedValueOnce({ data: { records: [record(1)], cursor: token } })
+      .mockResolvedValueOnce({ data: { records: [record(2)] } });
+    const page = render(await load());
+    expect(page).toContain("Next page");
+    expect(page).toContain("Idea 1");
+    expect(page).not.toContain("Idea 2");
+    expect(mocks.listRecords).toHaveBeenCalledTimes(2);
+  });
+
+  it("preserves loaded cards and offers retry when lookahead fails", async () => {
+    mocks.listRecords.mockResolvedValueOnce({ data: { records: [record(1)], cursor: token } })
+      .mockRejectedValueOnce(new Error("PDS unavailable"));
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const page = render(await load("/?cursor=resume"));
+      expect(page).toContain("Idea 1");
+      expect(page).toContain("Couldn&#x27;t check for another page");
+      expect(page).toContain('href="/?cursor=resume"');
+      expect(page).toContain("Check next page again");
+      expect(page).not.toContain(">Next page<");
+      expect(page).not.toContain("Nothing pinned yet.");
+      expect(mocks.listRecords).toHaveBeenCalledTimes(2);
+    } finally { errorLog.mockRestore(); }
   });
 
   it("distinguishes an empty cursor page from an empty account", async () => {
