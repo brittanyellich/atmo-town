@@ -45,10 +45,34 @@ describe("parseIdeaForm", () => {
     }
   });
 
-  it("rejects non-http links", () => {
-    const result = parseIdeaForm(form({ title: "T", pitch: "P", link: "javascript:alert(1)" }), NOW);
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.errors.link).toBeDefined();
+  it.each(["http://teal.fm", "https://teal.fm"])("accepts the advertised scheme in %s", (link) => {
+    const result = parseIdeaForm(form({ title: "T", pitch: "P", link }), NOW);
+    expect(result).toMatchObject({ ok: true, record: { links: [link] } });
+  });
+
+  it.each(["javascript:alert(1)", "ftp://example.com", "not a url"])("explains accepted schemes for %s", (link) => {
+    const result = parseIdeaForm(form({ title: "T", pitch: "P", link }), NOW);
+    expect(result).toMatchObject({
+      ok: false,
+      errors: { link: "Links need to start with http:// or https://" },
+      fields: { title: "T", pitch: "P", link },
+    });
+  });
+
+  it.each([
+    { field: "title", limit: 100, message: "Use 100 characters or fewer for the title." },
+    { field: "pitch", limit: 600, message: "Use 600 characters or fewer for the pitch." },
+    { field: "tags", limit: 32, message: "Use 32 characters or fewer for each tag." },
+  ])("describes the inclusive $field limit and retains rejected input", ({ field, limit, message }) => {
+    const atLimit = { title: "T", pitch: "P", link: "https://teal.fm", tags: "music", [field]: "🏡".repeat(limit) };
+    expect(parseIdeaForm(form(atLimit), NOW).ok).toBe(true);
+
+    const overLimit = { ...atLimit, [field]: "🏡".repeat(limit + 1) };
+    expect(parseIdeaForm(form(overLimit), NOW)).toEqual({
+      ok: false,
+      errors: { [field]: message },
+      fields: overLimit,
+    });
   });
 
   it("enforces the title grapheme limit, counting emoji as one character", () => {
