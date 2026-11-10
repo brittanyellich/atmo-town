@@ -237,3 +237,22 @@ code.uri { font-size: 13px; overflow-wrap: anywhere; }
 .idea-detail h1, .idea-detail p { margin: 0; }
 .note a { color: inherit; }
 .note a:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+
+.skip-link {
+  position: absolute;
+  z-index: 1;
+  inset: 8px auto auto 8px;
+  padding: 10px 14px;
+  background: var(--deck);
+  color: var(--ink);
+  font-weight: 600;
+}
+.skip-link:not(:focus) { clip-path: inset(50%); }
+.skip-link:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+.route-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}

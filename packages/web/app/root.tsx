@@ -53,6 +53,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <div className="page">
+          <a href="#main-content" className="skip-link">Skip to content</a>
           <header className="topbar">
             <Link to="/" className="brand">
               <TownLogo />
@@ -68,7 +69,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
               )}
             </div>
           </header>
-          {children}
+          <div id="main-content" className="route-content" tabIndex={-1}>
+            {children}
+          </div>
         </div>
         <ScrollRestoration />
         <Scripts />
