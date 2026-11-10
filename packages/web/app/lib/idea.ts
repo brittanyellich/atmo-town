@@ -23,9 +23,18 @@ export type IdeaRecord = {
   pitch: string;
   tags?: string[];
   links?: string[];
-  status: "open";
+  status?: string;
   createdAt: string;
 };
+
+export function isIdeaRecord(value: unknown): value is IdeaRecord {
+  try {
+    lexicons.assertValidRecord(IDEA_COLLECTION, value);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export type IdeaFields = {
   title: string;
@@ -54,7 +63,7 @@ function text(form: FormData, name: keyof IdeaFields): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function isHttpUrl(value: string): boolean {
+export function isHttpUrl(value: string): boolean {
   try {
     const url = new URL(value);
     return url.protocol === "https:" || url.protocol === "http:";

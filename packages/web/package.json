@@ -12,9 +12,12 @@
   },
   "dependencies": {
     "@atmo-town/lexicons": "*",
+    "@atproto-labs/did-resolver": "^0.3.11",
+    "@atproto-labs/fetch-node": "^0.4.5",
     "@atproto/api": "^0.30.0",
     "@atproto/lexicon": "*",
     "@atproto/oauth-client-node": "^0.5.13",
+    "@atproto/syntax": "^0.7.7",
     "@react-router/node": "^8.5.1",
     "@react-router/serve": "^8.5.1",
     "isbot": "^5.2.2",

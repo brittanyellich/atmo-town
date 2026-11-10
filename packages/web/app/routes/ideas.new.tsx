@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Form, Link, useNavigation } from "react-router";
 import type { Route } from "./+types/ideas.new";
+import { ideaPath } from "~/lib/idea-path.server";
 import { IDEA_COLLECTION, parseIdeaForm, type IdeaErrors, type IdeaFields } from "~/lib/idea";
 import { lookupHandle, requireAgent } from "~/lib/session.server";
 
@@ -14,7 +15,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 type ActionResult =
-  | { posted: { uri: string; title: string; pitch: string } }
+  | { posted: { uri: string; detailPath?: string; title: string; pitch: string } }
   | { errors: IdeaErrors; fields: IdeaFields };
 
 export async function action({ request }: Route.ActionArgs): Promise<ActionResult> {
@@ -28,7 +29,7 @@ export async function action({ request }: Route.ActionArgs): Promise<ActionResul
       collection: IDEA_COLLECTION,
       record: parsed.record,
     });
-    return { posted: { uri: res.data.uri, title: parsed.record.title, pitch: parsed.record.pitch } };
+    return { posted: { uri: res.data.uri, detailPath: ideaPath(res.data.uri), title: parsed.record.title, pitch: parsed.record.pitch } };
   } catch (err) {
     console.error("createRecord failed", err);
     return {
@@ -61,6 +62,7 @@ export default function PostIdea({ loaderData, actionData }: Route.ComponentProp
   const [pitch, setPitch] = useState(fields?.pitch ?? "");
 
   if (result && "posted" in result) {
+    const { detailPath } = result.posted;
     return (
       <main className="main">
         <div>
@@ -78,6 +80,7 @@ export default function PostIdea({ loaderData, actionData }: Route.ComponentProp
             <code className="uri">{result.posted.uri}</code>
             <div className="actions">
               <Link to="/" className="button">See your ideas</Link>
+              {detailPath && <Link to={detailPath} className="pill">View public idea</Link>}
               <Link to="/ideas/new" reloadDocument className="pill">Post another</Link>
             </div>
           </div>

@@ -1,5 +1,6 @@
 import { Link } from "react-router";
 import type { Route } from "./+types/home";
+import { ideaPath } from "~/lib/idea-path.server";
 import { IDEA_COLLECTION } from "~/lib/idea";
 import { getSignedInDid, lookupHandle, requireAgent } from "~/lib/session.server";
 
@@ -10,7 +11,7 @@ export function meta() {
   ];
 }
 
-type IdeaView = { uri: string; title: string; pitch: string; createdAt?: string };
+type IdeaView = { uri: string; path?: string; title: string; pitch: string; createdAt?: string };
 
 export async function loader({ request }: Route.LoaderArgs) {
   if (!(await getSignedInDid(request))) return { signedIn: false as const };
@@ -31,6 +32,7 @@ export async function loader({ request }: Route.LoaderArgs) {
       const value = r.value as Partial<IdeaView>;
       return {
         uri: r.uri,
+        path: ideaPath(r.uri),
         title: String(value.title ?? "Untitled"),
         pitch: String(value.pitch ?? ""),
         createdAt: typeof value.createdAt === "string" ? value.createdAt : undefined,
@@ -91,7 +93,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         )}
         {ideas.map((idea) => (
           <article key={idea.uri} className="note">
-            <span className="note-title">{idea.title}</span>
+            <h3 className="note-title">{idea.path ? <Link to={idea.path}>{idea.title}</Link> : idea.title}</h3>
             <span className="note-pitch">{idea.pitch}</span>
             <span className="note-meta">
               @{handle}
