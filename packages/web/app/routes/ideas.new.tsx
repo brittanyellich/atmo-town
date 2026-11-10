@@ -75,8 +75,8 @@ export default function PostIdea({ loaderData, actionData }: Route.ComponentProp
             <span className="note-meta">@{loaderData.handle} · just now</span>
           </div>
           <div className="posted-copy">
-            <h2>Pinned to the Notice board</h2>
-            <p>It's saved as a town.atmo.idea record in your own repo:</p>
+            <h2>Idea published</h2>
+            <p>Your idea is saved in your AT Protocol repository.</p>
             <code className="uri">{result.posted.uri}</code>
             <div className="actions">
               <Link to="/" className="button">See your ideas</Link>
@@ -167,8 +167,11 @@ export default function PostIdea({ loaderData, actionData }: Route.ComponentProp
             </div>
           </div>
 
-          <button type="submit" className="button" disabled={busy}>
-            {busy ? "Pinning…" : "Pin it to the board"}
+          <p id="idea-visibility" className="hint">
+            Anyone can read your idea once you publish it. It will be saved in your AT Protocol repository.
+          </p>
+          <button type="submit" className="button" disabled={busy} aria-describedby="idea-visibility">
+            {busy ? "Publishing…" : "Publish idea"}
           </button>
         </Form>
 

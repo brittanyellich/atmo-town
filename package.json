@@ -10,6 +10,7 @@
     "build": "npm run build -w @atmo-town/web",
     "start": "npm run start -w @atmo-town/web",
     "typecheck": "npm run typecheck -w @atmo-town/web",
+    "index:ideas": "node --experimental-strip-types --experimental-sqlite packages/web/indexer/run.ts",
     "test": "npm run test -w @atmo-town/web"
   }
 }

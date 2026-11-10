@@ -1,11 +1,15 @@
 import { Lexicons, type LexiconDoc } from "@atproto/lexicon";
-import ideaLexicon from "@atmo-town/lexicons/town/atmo/idea.json";
+import ideaLexicon from "@atmo-town/lexicons/town/atmo/idea.json" with { type: "json" };
 
 export const IDEA_COLLECTION = "town.atmo.idea";
 
 // The lexicon JSON is the source of truth. Every record is checked against it
 // before it is written, so the form rules below can't drift past the schema.
 const lexicons = new Lexicons([ideaLexicon as unknown as LexiconDoc]);
+
+export function assertIdeaRecord(value: unknown): asserts value is IdeaRecord {
+  lexicons.assertValidRecord(IDEA_COLLECTION, value);
+}
 
 export const LIMITS = {
   titleGraphemes: 100,
@@ -140,7 +144,7 @@ export function parseIdeaForm(form: FormData, now: Date = new Date()): ParseResu
   };
 
   try {
-    lexicons.assertValidRecord(IDEA_COLLECTION, record);
+    assertIdeaRecord(record);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return { ok: false, errors: { form: `That idea doesn't match the town.atmo.idea schema: ${message}` }, fields };
