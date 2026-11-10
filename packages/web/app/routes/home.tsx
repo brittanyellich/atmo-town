@@ -35,7 +35,8 @@ export async function loader({ request }: Route.LoaderArgs) {
         createdAt: typeof value.createdAt === "string" ? value.createdAt : undefined,
       };
     });
-    nextCursor = res.data.cursor || undefined;
+    // PDSes may return the last record's cursor even on a final, short page.
+    nextCursor = res.data.records.length === 50 ? res.data.cursor || undefined : undefined;
   } catch (err) {
     console.error("listRecords failed", err);
     loadError = "Couldn't load your ideas from your PDS.";

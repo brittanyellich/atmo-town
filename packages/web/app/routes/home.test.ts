@@ -27,7 +27,7 @@ beforeEach(() => {
 describe("home pagination", () => {
   it("makes 51 ideas reachable in two bounded requests and round-trips the opaque cursor", async () => {
     mocks.listRecords.mockResolvedValueOnce({ data: { records: Array.from({ length: 50 }, (_, i) => record(i)), cursor: token } })
-      .mockResolvedValueOnce({ data: { records: [record(50)] } });
+      .mockResolvedValueOnce({ data: { records: [record(50)], cursor: "last-record" } });
     const first = await load();
     if (!first.signedIn) throw new Error("Expected signed-in data");
     expect(first.ideas).toHaveLength(50);
@@ -48,6 +48,13 @@ describe("home pagination", () => {
 
   it.each([undefined, ""])("omits next-page navigation for final cursor %j", async (cursor) => {
     mocks.listRecords.mockResolvedValue({ data: { records: [record(1)], cursor } });
+    const data = await load();
+    expect(render(data)).not.toContain("Next page");
+    expect(mocks.listRecords).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([0, 1, 49])("omits next-page navigation for a short page of %i records even with a cursor", async (count) => {
+    mocks.listRecords.mockResolvedValue({ data: { records: Array.from({ length: count }, (_, i) => record(i)), cursor: "last-record" } });
     const data = await load();
     expect(render(data)).not.toContain("Next page");
     expect(mocks.listRecords).toHaveBeenCalledTimes(1);
