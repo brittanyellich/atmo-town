@@ -12,6 +12,9 @@ export const LIMITS = {
   pitchGraphemes: 600,
   tags: 8,
   tagGraphemes: 32,
+  titleBytes: ideaLexicon.defs.main.record.properties.title.maxLength,
+  pitchBytes: ideaLexicon.defs.main.record.properties.pitch.maxLength,
+  tagBytes: ideaLexicon.defs.main.record.properties.tags.items.maxLength,
 } as const;
 
 export type IdeaRecord = {
@@ -38,6 +41,7 @@ export type ParseResult =
   | { ok: false; errors: IdeaErrors; fields: IdeaFields };
 
 const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+const encoder = new TextEncoder();
 
 export function countGraphemes(value: string): number {
   let count = 0;
@@ -85,12 +89,16 @@ export function parseIdeaForm(form: FormData, now: Date = new Date()): ParseResu
     errors.title = "Give the idea a short title.";
   } else if (countGraphemes(fields.title) > LIMITS.titleGraphemes) {
     errors.title = `Use ${LIMITS.titleGraphemes} characters or fewer for the title.`;
+  } else if (encoder.encode(fields.title).byteLength > LIMITS.titleBytes) {
+    errors.title = "Shorten the title; complex emoji and combined characters can take extra space.";
   }
 
   if (!fields.pitch) {
     errors.pitch = "Add a sentence or two about the idea.";
   } else if (countGraphemes(fields.pitch) > LIMITS.pitchGraphemes) {
     errors.pitch = `Use ${LIMITS.pitchGraphemes} characters or fewer for the pitch.`;
+  } else if (encoder.encode(fields.pitch).byteLength > LIMITS.pitchBytes) {
+    errors.pitch = "Shorten the pitch; complex emoji and combined characters can take extra space.";
   }
 
   if (fields.link && !isHttpUrl(fields.link)) {
@@ -102,6 +110,8 @@ export function parseIdeaForm(form: FormData, now: Date = new Date()): ParseResu
     errors.tags = `Use ${LIMITS.tags} tags or fewer.`;
   } else if (tags.some((tag) => countGraphemes(tag) > LIMITS.tagGraphemes)) {
     errors.tags = `Use ${LIMITS.tagGraphemes} characters or fewer for each tag.`;
+  } else if (tags.some((tag) => encoder.encode(tag).byteLength > LIMITS.tagBytes)) {
+    errors.tags = "Shorten each tag; complex emoji and combined characters can take extra space.";
   }
 
   if (Object.keys(errors).length > 0) return { ok: false, errors, fields };

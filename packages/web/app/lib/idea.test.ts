@@ -111,4 +111,47 @@ describe("emoji-heavy input", () => {
     const result = parseIdeaForm(form({ title: "T", pitch: "P", tags: "🎵".repeat(32) }), NOW);
     expect(result.ok).toBe(true);
   });
+
+  it.each([
+    { field: "title", graphemes: 100, bytes: 1000 },
+    { field: "pitch", graphemes: 600, bytes: 6000 },
+    { field: "tags", graphemes: 32, bytes: 320 },
+  ])("reports byte overflow on $field while retaining submitted fields", ({ field, graphemes, bytes }) => {
+    const fields = { title: "T", pitch: "P", link: "https://teal.fm", tags: "music", [field]: "👩‍👩‍👧‍👦".repeat(graphemes) };
+    expect(countGraphemes(fields[field as keyof typeof fields])).toBe(graphemes);
+    expect(new TextEncoder().encode(fields[field as keyof typeof fields]).byteLength).toBeGreaterThan(bytes);
+    const result = parseIdeaForm(form(fields), NOW);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(Object.keys(result.errors)).toEqual([field]);
+      expect(result.errors[field as "title" | "pitch" | "tags"]).toContain("Shorten");
+      expect(result.fields).toEqual(fields);
+    }
+  });
+
+  it.each([
+    { field: "title", bytes: 1000 },
+    { field: "pitch", bytes: 6000 },
+    { field: "tags", bytes: 320 },
+  ])("accepts the exact $field byte limit and rejects one byte over", ({ field, bytes }) => {
+    // Combining accents stay in one grapheme; the final ASCII character
+    // makes the even byte boundary exact without exceeding grapheme limits.
+    const text = "a" + "\u0301".repeat((bytes - 2) / 2) + "b";
+    expect(new TextEncoder().encode(text).byteLength).toBe(bytes);
+    const fields = { title: "T", pitch: "P", tags: "music", [field]: text };
+    expect(parseIdeaForm(form(fields), NOW).ok).toBe(true);
+    const result = parseIdeaForm(form({ ...fields, [field]: text + "c" }), NOW);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(Object.keys(result.errors)).toEqual([field]);
+  });
+
+  it("checks individual trimmed tags after parsing the list", () => {
+    const tags = ` music, ${"👩‍👩‍👧‍👦".repeat(13)}, music `;
+    const result = parseIdeaForm(form({ title: "T", pitch: "P", tags }), NOW);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(Object.keys(result.errors)).toEqual(["tags"]);
+      expect(result.fields.tags).toBe(tags.trim());
+    }
+  });
 });
