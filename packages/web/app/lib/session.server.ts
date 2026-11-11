@@ -3,10 +3,7 @@ import { createCookieSessionStorage, redirect } from "react-router";
 export { safeReturnTo } from "./return-to";
 import { getOAuthClient } from "./oauth.server";
 
-const secret = process.env.SESSION_SECRET;
-if (!secret && process.env.NODE_ENV === "production") {
-  throw new Error("SESSION_SECRET must be set in production");
-}
+import { sessionSecret } from "./session-secret.server";
 
 const storage = createCookieSessionStorage<{ did: string }>({
   cookie: {
@@ -15,7 +12,7 @@ const storage = createCookieSessionStorage<{ did: string }>({
     sameSite: "lax",
     path: "/",
     secure: process.env.NODE_ENV === "production",
-    secrets: [secret ?? "atmo-town-dev-only-secret"],
+    secrets: [sessionSecret],
     maxAge: 60 * 60 * 24 * 30,
   },
 });

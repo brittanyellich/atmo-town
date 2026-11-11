@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Form, Link, useNavigation } from "react-router";
 import type { Route } from "./+types/ideas.new";
 import { ideaPath } from "~/lib/idea-path.server";
-import { IDEA_COLLECTION, parseIdeaForm, type IdeaErrors, type IdeaFields } from "~/lib/idea";
+import { newIdeaSubmission, readIdeaSubmission, publishIdea } from "~/lib/idea-submission.server";
+import { parseIdeaForm, type IdeaErrors, type IdeaFields } from "~/lib/idea";
 import { lookupHandle, requireAgent } from "~/lib/session.server";
 
 export function meta() {
@@ -11,32 +12,42 @@ export function meta() {
 
 export async function loader({ request }: Route.LoaderArgs) {
   const { agent, did } = await requireAgent(request);
-  return { handle: (await lookupHandle(agent, did)) ?? did };
+  return { handle: (await lookupHandle(agent, did)) ?? did, submission: newIdeaSubmission(did) };
 }
 
 type ActionResult =
   | { posted: { uri: string; detailPath?: string; title: string; pitch: string } }
-  | { errors: IdeaErrors; fields: IdeaFields };
+  | { errors: IdeaErrors; fields: IdeaFields; submission: string; existingPath?: string };
 
 export async function action({ request }: Route.ActionArgs): Promise<ActionResult> {
   const { agent, did } = await requireAgent(request);
-  const parsed = parseIdeaForm(await request.formData());
-  if (!parsed.ok) return { errors: parsed.errors, fields: parsed.fields };
-
-  try {
-    const res = await agent.com.atproto.repo.createRecord({
-      repo: did,
-      collection: IDEA_COLLECTION,
-      record: parsed.record,
-    });
-    return { posted: { uri: res.data.uri, detailPath: ideaPath(res.data.uri), title: parsed.record.title, pitch: parsed.record.pitch } };
-  } catch (err) {
-    console.error("createRecord failed", err);
+  const form = await request.formData();
+  const token = form.get("submission");
+  const submission = readIdeaSubmission(token, did);
+  const parsed = parseIdeaForm(form, submission ? new Date(submission.createdAt) : undefined);
+  const fields = parsed.ok ? parsed.submittedFields : parsed.fields;
+  if (!submission || typeof token !== "string") {
     return {
-      errors: { form: "Your PDS didn't accept the idea. Try again in a moment." },
-      fields: parsed.submittedFields,
+      errors: { form: "This draft needs a fresh publishing confirmation. Review it and submit again." },
+      fields, submission: newIdeaSubmission(did),
     };
   }
+  if (!parsed.ok) return { errors: parsed.errors, fields, submission: token };
+
+  const result = await publishIdea(agent, submission, parsed.record);
+  if (result.state === "posted") {
+    return { posted: {
+      uri: result.uri, detailPath: ideaPath(result.uri),
+      title: parsed.record.title, pitch: parsed.record.pitch,
+    } };
+  }
+  return {
+    errors: { form: result.state === "conflict"
+      ? "An earlier version of this draft is already published. View it or start a new idea to publish these changes."
+      : "We couldn’t confirm whether your idea was published. Your draft is saved here. Submit again to check safely." },
+    fields, submission: token,
+    ...(result.state === "conflict" ? { existingPath: ideaPath(result.uri) } : {}),
+  };
 }
 
 function BackIcon() {
@@ -98,6 +109,7 @@ export default function PostIdea({ loaderData, actionData }: Route.ComponentProp
       </div>
       <div className="layout">
         <Form method="post" className="card" noValidate>
+          <input type="hidden" name="submission" value={result && "submission" in result ? result.submission : loaderData.submission} />
           <div className="posting-as">
             <span>Posting as <strong>@{loaderData.handle}</strong></span>
           </div>
@@ -106,6 +118,12 @@ export default function PostIdea({ loaderData, actionData }: Route.ComponentProp
             <div ref={summary} className="form-error error-summary" tabIndex={-1} role="group" aria-labelledby="error-summary-title">
               <h2 id="error-summary-title">Your idea needs attention</h2>
               {errors.form && <p>{errors.form}</p>}
+              {result && "existingPath" in result && result.existingPath && (
+                <div className="actions">
+                  <Link to={result.existingPath}>View published idea</Link>
+                  <Link to="/ideas/new" reloadDocument>Start a new idea</Link>
+                </div>
+              )}
               {fieldErrors.length > 0 && <ul>
                 {fieldErrors.map(({ name, message }) => (
                   <li key={name}>

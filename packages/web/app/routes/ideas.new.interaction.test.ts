@@ -3,6 +3,7 @@ import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router";
 import { expect, it, vi } from "vitest";
+import { newIdeaSubmission } from "~/lib/idea-submission.server";
 import PostIdea, { action } from "./ideas.new";
 
 vi.mock("~/lib/session.server", () => ({
@@ -17,7 +18,7 @@ vi.mock("react-router", async (importOriginal) => ({
 it("focuses the invalid-post summary and moves focus to each linked field", async () => {
   const request = new Request("https://atmo.town/ideas/new", {
     method: "POST",
-    body: new URLSearchParams({ title: " ", pitch: " Keep this pitch. ", link: "javascript:alert(1)" }),
+    body: new URLSearchParams({ submission: newIdeaSubmission("did:plc:abcdefghijklmnopqrstuvwx"), title: " ", pitch: " Keep this pitch. ", link: "javascript:alert(1)" }),
   });
   const result = await action({ request } as Parameters<typeof action>[0]);
   if (!("fields" in result)) throw new Error("Expected invalid submission");
