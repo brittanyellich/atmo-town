@@ -15,9 +15,11 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 export async function action({ request }: Route.ActionArgs) {
   const form = await request.formData();
-  const handle = String(form.get("handle") ?? "").trim().replace(/^@/, "");
+  const value = form.get("handle");
+  const submittedHandle = typeof value === "string" ? value : "";
+  const handle = submittedHandle.trim().replace(/^@/, "");
   const returnTo = safeReturnTo(form.get("returnTo"));
-  if (!handle) return { error: "Enter your handle, like alice.bsky.social." };
+  if (!handle) return { error: "Enter your handle, like alice.bsky.social.", handle: submittedHandle };
 
   try {
     const url = await getOAuthClient().authorize(handle, {
@@ -28,7 +30,7 @@ export async function action({ request }: Route.ActionArgs) {
     return redirect(url.toString());
   } catch (err) {
     console.error("OAuth authorize failed", err);
-    return { error: `Couldn't start sign-in for @${handle}. Check the handle and try again.` };
+    return { error: `Couldn't start sign-in for @${handle}. Check the handle and try again.`, handle: submittedHandle };
   }
 }
 
@@ -41,7 +43,7 @@ export default function Login({ loaderData, actionData }: Route.ComponentProps) 
       <Form method="post" className="card" style={{ maxWidth: 560 }}>
         <input type="hidden" name="returnTo" value={loaderData.returnTo} />
         <div className="field">
-          <label htmlFor="handle">Your Atmosphere handle</label>
+          <label htmlFor="handle">Your Atmosphere handle (required)</label>
           <p id="handle-hint" className="hint">
             atmo.town only asks to write town.atmo.idea records to your repo.
           </p>
@@ -54,11 +56,12 @@ export default function Login({ loaderData, actionData }: Route.ComponentProps) 
             autoCapitalize="none"
             spellCheck={false}
             required
-            aria-describedby="handle-hint"
+            defaultValue={actionData?.handle}
+            aria-describedby={actionData?.error ? "handle-hint handle-error" : "handle-hint"}
             aria-invalid={actionData?.error ? true : undefined}
           />
         </div>
-        {actionData?.error && <p className="form-error" role="alert">{actionData.error}</p>}
+        {actionData?.error && <p id="handle-error" className="form-error" role="alert">{actionData.error}</p>}
         <button type="submit" className="button" disabled={busy}>
           {busy ? "Heading over…" : "Continue"}
         </button>
