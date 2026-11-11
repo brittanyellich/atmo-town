@@ -14,6 +14,7 @@ describe("parseIdeaForm", () => {
     const result = parseIdeaForm(form({ title: "  Atmosphere Wrapped ", pitch: "A year-end recap." }), NOW);
     expect(result).toEqual({
       ok: true,
+      submittedFields: { title: "  Atmosphere Wrapped ", pitch: "A year-end recap.", link: "", tags: "" },
       record: {
         $type: "town.atmo.idea",
         title: "Atmosphere Wrapped",

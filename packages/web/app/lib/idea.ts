@@ -50,7 +50,7 @@ export type IdeaFields = {
 export type IdeaErrors = Partial<Record<keyof IdeaFields | "form", string>>;
 
 export type ParseResult =
-  | { ok: true; record: IdeaRecord }
+  | { ok: true; record: IdeaRecord; submittedFields: IdeaFields }
   | { ok: false; errors: IdeaErrors; fields: IdeaFields };
 
 const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
@@ -64,7 +64,7 @@ export function countGraphemes(value: string): number {
 
 function text(form: FormData, name: keyof IdeaFields): string {
   const value = form.get(name);
-  return typeof value === "string" ? value.trim() : "";
+  return typeof value === "string" ? value : "";
 }
 
 export function isHttpUrl(value: string): boolean {
@@ -90,12 +90,15 @@ export function parseTags(raw: string): string[] {
 }
 
 export function parseIdeaForm(form: FormData, now: Date = new Date()): ParseResult {
-  const fields: IdeaFields = {
+  const submittedFields: IdeaFields = {
     title: text(form, "title"),
     pitch: text(form, "pitch"),
     link: text(form, "link"),
     tags: text(form, "tags"),
   };
+  const fields = Object.fromEntries(
+    Object.entries(submittedFields).map(([name, value]) => [name, value.trim()]),
+  ) as IdeaFields;
   const errors: IdeaErrors = {};
 
   if (!fields.title) {
@@ -150,5 +153,5 @@ export function parseIdeaForm(form: FormData, now: Date = new Date()): ParseResu
     return { ok: false, errors: { form: `That idea doesn't match the town.atmo.idea schema: ${message}` }, fields };
   }
 
-  return { ok: true, record };
+  return { ok: true, record, submittedFields };
 }
