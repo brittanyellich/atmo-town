@@ -40,11 +40,11 @@ function render(result: ReturnType<typeof loader>) {
   ));
 }
 
-function add(did: string, rkey: string, title: string) {
+function add(did: string, rkey: string, title: string, date = createdAt) {
   index.apply({
     type: "record", id: 1, rev: rkey, action: "create", collection: "town.atmo.idea",
     did: did as `did:${string}:${string}`, rkey, live: false,
-    record: { $type: "town.atmo.idea", title, pitch: "A pitch", createdAt },
+    record: { $type: "town.atmo.idea", title, pitch: "A pitch", createdAt: date },
   });
 }
 
@@ -100,12 +100,34 @@ it.each(["?cursor=!", "?cursor=", "?cursor=abc&cursor=def"])("rejects an invalid
 
 it("reports an unavailable index and offers to retry the same page", () => {
   vi.stubEnv("ATMO_IDEA_INDEX_PATH", join(directory, "missing.sqlite"));
-  vi.spyOn(console, "error").mockImplementation(() => {});
+  const log = vi.spyOn(console, "error").mockImplementation(() => {});
   const token = Buffer.from(JSON.stringify([0, firstAuthor, "3lxyzabcdefg2"])).toString("base64url");
   const path = `/notice-board?cursor=${token}`;
   const result = load(path);
   expect(result.init?.status).toBe(503);
+  expect(log.mock.calls).toEqual([["Notice board index read failed", { errorType: "Error", sqliteCode: 14 }]]);
   expect(render(result)).toContain("Ideas are temporarily unavailable.");
   expect(render(result)).toContain(`href="${path}"`);
   expect(render(result)).toContain("Try again");
+});
+
+it("keeps future-dated ideas out of New until their timestamp arrives", () => {
+  const now = new Date("2026-11-11T00:00:00.000Z");
+  vi.useFakeTimers({ toFake: ["Date"] });
+  try {
+    vi.setSystemTime(now);
+    add(firstAuthor, "3lxyzabcdefg2", "Current idea");
+    const future = new Date(now.getTime() + 60_000);
+    add(secondAuthor, "3lxyzabcdefg3", "Future idea", future.toISOString());
+    const current = load();
+    if (current.data.state !== "available") throw new Error("Expected indexed ideas");
+    expect(current.data.ideas.map(({ title }) => title)).toEqual(["Current idea"]);
+
+    vi.setSystemTime(future);
+    const later = load();
+    if (later.data.state !== "available") throw new Error("Expected indexed ideas");
+    expect(later.data.ideas.map(({ title }) => title)).toEqual(["Future idea", "Current idea"]);
+  } finally {
+    vi.useRealTimers();
+  }
 });

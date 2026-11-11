@@ -45,8 +45,14 @@ export function loadNoticeBoard(request: Request) {
       next: page.next ? pagePath(page.next) : undefined,
     };
   } catch (error) {
+    const sqliteCode = error instanceof Error && "errcode" in error && typeof error.errcode === "number"
+      ? error.errcode
+      : undefined;
+    // SQLite result codes distinguish missing files, invalid schemas and locks
+    // without printing database paths or raw exception content.
     console.error("Notice board index read failed", {
       errorType: error instanceof Error ? error.name : "Unknown",
+      sqliteCode,
     });
     return { state: "unavailable" as const, retry: cursor ? pagePath(cursor) : BOARD_PATH };
   }

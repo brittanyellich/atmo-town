@@ -47,3 +47,8 @@ index. If you set `ATMO_IDEA_INDEX_PATH`, use the same absolute path for both
 the worker and the web app. To reuse an index created by the earlier root-level
 worker command, point both processes at its existing file. Run one writer per
 index. To rebuild a lost index, replay or backfill from Tap again; reconnecting alone does not replay events already acknowledged.
+
+The New board orders ideas by creation timestamp, then author DID and record
+key, all descending. Ideas dated in the future become eligible once that time
+arrives. The board cursor uses this order. Interest-based views will define
+their own ordering and cursors once their ranking rules are agreed.
