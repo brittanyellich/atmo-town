@@ -8,6 +8,7 @@
     "dev": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
+    "index:ideas": "node --experimental-strip-types --experimental-sqlite indexer/run.ts",
     "test": "vitest run"
   },
   "dependencies": {
