@@ -68,7 +68,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   <button type="submit" className="pill">Sign out</button>
                 </Form>
               ) : (
-                <Link to={signInHref(location.pathname, location.search)} className="pill">Sign in</Link>
+                <Link to={signInHref(location.pathname, location.search, location.hash)} className="pill">Sign in</Link>
               )}
             </div>
           </header>

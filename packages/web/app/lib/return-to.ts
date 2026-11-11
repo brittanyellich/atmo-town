@@ -17,10 +17,11 @@ export function safeReturnTo(value: unknown): string {
   }
 }
 
-export function signInHref(pathname: string, search: string): string {
+export function signInHref(pathname: string, search: string, hash = ""): string {
   const destination = safeReturnTo(pathname === "/login"
     ? new URLSearchParams(search).get("returnTo")
-    : pathname + search);
-  const returnTo = new URL(destination, "http://atmo.invalid").pathname === "/login" ? "/" : destination;
+    : pathname + search + hash);
+  const destinationPath = new URL(destination, "http://atmo.invalid").pathname;
+  const returnTo = ["/login", "/oauth/callback", "/logout"].includes(destinationPath) ? "/" : destination;
   return `/login?${new URLSearchParams({ returnTo })}`;
 }
