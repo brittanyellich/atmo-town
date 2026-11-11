@@ -24,11 +24,17 @@ export async function action({ request }: Route.ActionArgs): Promise<ActionResul
   const form = await request.formData();
   const token = form.get("submission");
   const submission = readIdeaSubmission(token, did);
-  const parsed = parseIdeaForm(form, submission ? new Date(submission.createdAt) : undefined);
+  const parsed = parseIdeaForm(form);
   const fields = parsed.ok ? parsed.submittedFields : parsed.fields;
   if (!submission || typeof token !== "string") {
     return {
       errors: { form: "This draft needs a fresh publishing confirmation. Review it and submit again." },
+      fields, submission: newIdeaSubmission(did),
+    };
+  }
+  if (form.get("intent") === "fresh") {
+    return {
+      errors: { form: "Your draft is ready as a new idea. Review it and publish when ready." },
       fields, submission: newIdeaSubmission(did),
     };
   }
@@ -121,7 +127,6 @@ export default function PostIdea({ loaderData, actionData }: Route.ComponentProp
               {result && "existingPath" in result && result.existingPath && (
                 <div className="actions">
                   <Link to={result.existingPath}>View published idea</Link>
-                  <Link to="/ideas/new" reloadDocument>Start a new idea</Link>
                 </div>
               )}
               {fieldErrors.length > 0 && <ul>
@@ -207,6 +212,9 @@ export default function PostIdea({ loaderData, actionData }: Route.ComponentProp
           <button type="submit" className="button" disabled={busy} aria-describedby="idea-visibility">
             {busy ? "Publishing…" : "Publish idea"}
           </button>
+          {result && "existingPath" in result && result.existingPath && (
+            <button type="submit" name="intent" value="fresh" className="pill" disabled={busy}>Keep draft as a new idea</button>
+          )}
         </Form>
 
         <aside aria-label="Preview" className="board">

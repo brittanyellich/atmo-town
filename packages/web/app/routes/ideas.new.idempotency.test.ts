@@ -22,7 +22,7 @@ beforeEach(() => {
   writeUnavailable = false;
   const repo = {
     async putRecord(input: { rkey: string; record: IdeaRecord; repo: string; swapRecord: null }) {
-      if (writeUnavailable) throw new Error("Connection unavailable");
+      if (writeUnavailable) throw Object.assign(new Error("private upstream detail"), { status: 503, error: "UpstreamUnavailable" });
       expect(input.repo).toBe(did);
       expect(input.swapRecord).toBeNull();
       if (records.has(input.rkey)) throw new Error("InvalidSwap");
@@ -55,6 +55,7 @@ function submit(submission: string, title = " An idea ") {
 it("reconciles commit-then-throw and retries to one record, URI, and timestamp", async () => {
   const token = newIdeaSubmission(did);
   const identity = readIdeaSubmission(token, did);
+  const before = Date.now();
   loseResponse = true;
   const initial = await submit(token);
   const retry = await submit(token);
@@ -62,7 +63,7 @@ it("reconciles commit-then-throw and retries to one record, URI, and timestamp",
   expect(initial).toHaveProperty("posted.uri", `at://${did}/town.atmo.idea/${identity?.rkey}`);
   expect(records.size).toBe(1);
   expect(commits).toBe(1);
-  expect([...records.values()][0].createdAt).toBe(identity?.createdAt);
+  expect(Date.parse([...records.values()][0].createdAt)).toBeGreaterThanOrEqual(before);
 });
 
 it("serializes concurrent attempts at the PDS conditional creation boundary", async () => {
@@ -141,8 +142,46 @@ it("allows draft corrections when a failed attempt never committed", async () =>
   const token = newIdeaSubmission(did);
   writeUnavailable = true;
   expect(await submit(token)).toHaveProperty("submission", token);
+  expect(console.error).toHaveBeenCalledWith("Idea publication could not be confirmed", {
+    write: { type: "Error", status: 503, code: "UpstreamUnavailable", causeCode: undefined },
+    read: { type: "Error", status: undefined, code: undefined, causeCode: undefined },
+  });
+  expect(JSON.stringify(vi.mocked(console.error).mock.calls)).not.toContain("private upstream detail");
   writeUnavailable = false;
   expect(await submit(token, " Corrected draft ")).toHaveProperty("posted.title", "Corrected draft");
   expect(records.size).toBe(1);
   expect(commits).toBe(1);
+});
+
+it("retains the changed draft for a fresh identity without publishing it", async () => {
+  const token = newIdeaSubmission(did);
+  await submit(token);
+  const fields = { title: " Changed draft ", pitch: " Keep this pitch. ", tags: "Music, music", link: "" };
+  const request = new Request("https://atmo.town/ideas/new", {
+    method: "POST", body: new URLSearchParams({ ...fields, submission: token, intent: "fresh" }),
+  });
+  const result = await action({ request } as Parameters<typeof action>[0]);
+  if (!("fields" in result)) throw new Error("Expected draft review");
+  expect(result.fields).toEqual(fields);
+  expect(result.submission).not.toBe(token);
+  expect(commits).toBe(1);
+  expect(await submit(result.submission, fields.title)).toHaveProperty("posted");
+  expect(records.size).toBe(2);
+});
+
+it("timestamps a delayed form when first submitted and preserves it on later retry", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  try {
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+    const token = newIdeaSubmission(did);
+    vi.setSystemTime(new Date("2026-01-05T00:00:00.000Z"));
+    const first = await submit(token);
+    expect([...records.values()][0].createdAt).toBe("2026-01-05T00:00:00.000Z");
+    vi.setSystemTime(new Date("2026-01-06T00:00:00.000Z"));
+    expect(await submit(token)).toEqual(first);
+    expect([...records.values()][0].createdAt).toBe("2026-01-05T00:00:00.000Z");
+    expect(commits).toBe(1);
+  } finally {
+    vi.useRealTimers();
+  }
 });

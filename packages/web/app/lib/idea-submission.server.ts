@@ -2,17 +2,17 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import { TID } from "@atproto/common-web";
 import type { Agent } from "@atproto/api";
-import { IDEA_COLLECTION, type IdeaRecord } from "./idea";
+import { IDEA_COLLECTION, isIdeaRecord, type IdeaRecord } from "./idea";
 import { sessionSecret } from "./session-secret.server";
 
-type Submission = { did: string; rkey: string; createdAt: string };
+type Submission = { did: string; rkey: string };
 
 function signature(body: string) {
   return createHmac("sha256", sessionSecret).update("idea-submission:" + body).digest();
 }
 
 export function newIdeaSubmission(did: string) {
-  const submission: Submission = { did, rkey: TID.nextStr(), createdAt: new Date().toISOString() };
+  const submission: Submission = { did, rkey: TID.nextStr() };
   const body = Buffer.from(JSON.stringify(submission)).toString("base64url");
   return `${body}.${signature(body).toString("base64url")}`;
 }
@@ -27,8 +27,7 @@ export function readIdeaSubmission(token: unknown, did: string): Submission | un
   try {
     const value = JSON.parse(Buffer.from(body, "base64url").toString("utf8"));
     if (value.did !== did || typeof value.rkey !== "string" || !TID.is(value.rkey)) return;
-    if (typeof value.createdAt !== "string" || !Number.isFinite(Date.parse(value.createdAt))) return;
-    return { did, rkey: value.rkey, createdAt: value.createdAt };
+    return { did, rkey: value.rkey };
   } catch {
     return;
   }
@@ -50,15 +49,33 @@ export async function publishIdea(agent: Agent, submission: Submission, record: 
         repo: did, collection: IDEA_COLLECTION, rkey,
       });
       if (existing.data.uri !== uri) return { state: "unconfirmed" as const };
-      return isDeepStrictEqual(existing.data.value, record)
+      if (!isIdeaRecord(existing.data.value)) return { state: "conflict" as const, uri };
+      const { createdAt: existingTime, ...existingContent } = existing.data.value;
+      const { createdAt: attemptedTime, ...attemptedContent } = record;
+      // Conditional creation preserves the first commit's timestamp. Retries
+      // compare author content while leaving that timestamp unchanged.
+      return isDeepStrictEqual(existingContent, attemptedContent)
         ? { state: "posted" as const, uri }
         : { state: "conflict" as const, uri };
     } catch (readError) {
       console.error("Idea publication could not be confirmed", {
-        writeErrorType: writeError instanceof Error ? writeError.name : "Unknown",
-        readErrorType: readError instanceof Error ? readError.name : "Unknown",
+        write: errorDetails(writeError),
+        read: errorDetails(readError),
       });
       return { state: "unconfirmed" as const };
     }
   }
+}
+
+function errorDetails(error: unknown) {
+  if (!(error instanceof Error)) return { type: "Unknown" };
+  return {
+    type: error.name,
+    status: "status" in error && typeof error.status === "number" ? error.status : undefined,
+    code: "error" in error && typeof error.error === "string" && /^[A-Za-z0-9_]+$/.test(error.error)
+      ? error.error : undefined,
+    causeCode: "cause" in error && error.cause instanceof Error && "code" in error.cause
+      && typeof error.cause.code === "string" && /^[A-Z0-9_]+$/.test(error.cause.code)
+      ? error.cause.code : undefined,
+  };
 }
