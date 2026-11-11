@@ -256,3 +256,6 @@ code.uri { font-size: 13px; overflow-wrap: anywhere; }
   flex-direction: column;
   min-width: 0;
 }
+.notice-heading, .notice-empty { margin: 0; }
+.notice-empty { color: var(--paper); }
+.notice-idea { overflow-wrap: anywhere; }
