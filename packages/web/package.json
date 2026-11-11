@@ -16,6 +16,7 @@
     "@atproto-labs/did-resolver": "^0.3.11",
     "@atproto-labs/fetch-node": "^0.4.5",
     "@atproto/api": "^0.30.0",
+    "@atproto/common-web": "^0.5.17",
     "@atproto/lexicon": "*",
     "@atproto/oauth-client-node": "^0.5.13",
     "@atproto/syntax": "^0.7.7",
