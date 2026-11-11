@@ -34,12 +34,7 @@ export async function action({ request }: Route.ActionArgs): Promise<ActionResul
     console.error("createRecord failed", err);
     return {
       errors: { form: "Your PDS didn't accept the idea. Try again in a moment." },
-      fields: {
-        title: parsed.record.title,
-        pitch: parsed.record.pitch,
-        link: parsed.record.links?.[0] ?? "",
-        tags: parsed.record.tags?.join(", ") ?? "",
-      },
+      fields: parsed.submittedFields,
     };
   }
 }
