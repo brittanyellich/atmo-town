@@ -241,3 +241,7 @@ code.uri { font-size: 13px; overflow-wrap: anywhere; }
 .notice-heading, .notice-empty { margin: 0; }
 .notice-empty { color: var(--paper); }
 .notice-idea { overflow-wrap: anywhere; }
+
+.error-summary:focus { outline: 2px solid var(--ink); outline-offset: 4px; }
+.error-summary h2 { margin: 0; font-size: 22px; }
+.error-summary a:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
