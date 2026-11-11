@@ -20,7 +20,8 @@ type ActionResult =
 
 export async function action({ request }: Route.ActionArgs): Promise<ActionResult> {
   const { agent, did } = await requireAgent(request);
-  const parsed = parseIdeaForm(await request.formData());
+  const form = await request.formData();
+  const parsed = parseIdeaForm(form);
   if (!parsed.ok) return { errors: parsed.errors, fields: parsed.fields };
 
   try {
@@ -32,13 +33,17 @@ export async function action({ request }: Route.ActionArgs): Promise<ActionResul
     return { posted: { uri: res.data.uri, detailPath: ideaPath(res.data.uri), title: parsed.record.title, pitch: parsed.record.pitch } };
   } catch (err) {
     console.error("createRecord failed", err);
+    function submittedText(name: keyof IdeaFields) {
+      const value = form.get(name);
+      return typeof value === "string" ? value : "";
+    }
     return {
       errors: { form: "Your PDS didn't accept the idea. Try again in a moment." },
       fields: {
-        title: parsed.record.title,
-        pitch: parsed.record.pitch,
-        link: parsed.record.links?.[0] ?? "",
-        tags: parsed.record.tags?.join(", ") ?? "",
+        title: submittedText("title"),
+        pitch: submittedText("pitch"),
+        link: submittedText("link"),
+        tags: submittedText("tags"),
       },
     };
   }
