@@ -8,10 +8,12 @@ import {
   Scripts,
   ScrollRestoration,
   useRouteLoaderData,
+  useLocation,
 } from "react-router";
 
 import type { Route } from "./+types/root";
 import { getSignedInDid } from "./lib/session.server";
+import { signInHref } from "./lib/return-to";
 import "./app.css";
 
 export const links: Route.LinksFunction = () => [
@@ -43,6 +45,7 @@ function TownLogo() {
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const data = useRouteLoaderData<typeof loader>("root");
+  const location = useLocation();
   return (
     <html lang="en">
       <head>
@@ -53,6 +56,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <div className="page">
+          <a href="#main-content" className="skip-link">Skip to content</a>
           <header className="topbar">
             <Link to="/" className="brand">
               <TownLogo />
@@ -64,11 +68,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   <button type="submit" className="pill">Sign out</button>
                 </Form>
               ) : (
-                <Link to="/login" className="pill">Sign in</Link>
+                <Link to={signInHref(location.pathname, location.search, location.hash)} className="pill">Sign in</Link>
               )}
             </div>
           </header>
-          {children}
+          <div id="main-content" className="route-content" tabIndex={-1}>
+            {children}
+          </div>
         </div>
         <ScrollRestoration />
         <Scripts />
