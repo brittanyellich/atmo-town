@@ -158,7 +158,7 @@ describe("emoji-heavy input", () => {
       expect(Object.keys(result.errors)).toEqual(["tags"]);
       expect(result.errors.tags).toContain("Shorten comma-separated tag 4");
       expect(result.errors.tags).toContain("325 UTF-8 bytes exceeds the 320-byte limit");
-      expect(result.fields.tags).toBe(tags.trim());
+      expect(result.fields.tags).toBe(tags);
     }
   });
 });

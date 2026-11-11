@@ -134,7 +134,7 @@ export function parseIdeaForm(form: FormData, now: Date = new Date()): ParseResu
     }
   }
 
-  if (Object.keys(errors).length > 0) return { ok: false, errors, fields };
+  if (Object.keys(errors).length > 0) return { ok: false, errors, fields: submittedFields };
 
   const record: IdeaRecord = {
     $type: IDEA_COLLECTION,
@@ -150,7 +150,7 @@ export function parseIdeaForm(form: FormData, now: Date = new Date()): ParseResu
     assertIdeaRecord(record);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    return { ok: false, errors: { form: `That idea doesn't match the town.atmo.idea schema: ${message}` }, fields };
+    return { ok: false, errors: { form: `That idea doesn't match the town.atmo.idea schema: ${message}` }, fields: submittedFields };
   }
 
   return { ok: true, record, submittedFields };
