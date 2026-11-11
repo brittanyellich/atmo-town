@@ -1,5 +1,6 @@
 import { Agent } from "@atproto/api";
 import { createCookieSessionStorage, redirect } from "react-router";
+export { safeReturnTo } from "./return-to";
 import { getOAuthClient } from "./oauth.server";
 
 const secret = process.env.SESSION_SECRET;
@@ -24,25 +25,6 @@ export const { getSession, commitSession, destroySession } = storage;
 export async function getSignedInDid(request: Request): Promise<string | undefined> {
   const session = await getSession(request.headers.get("Cookie"));
   return session.get("did");
-}
-
-/** Only allow same-site relative paths, so returnTo can't send people off-site. */
-export function safeReturnTo(value: unknown): string {
-  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//")) return "/";
-  // Browsers remove tabs/newlines and interpret backslashes as URL separators.
-  if (/[\u0000-\u001f\u007f\\]/.test(value)) return "/";
-
-  const origin = "http://atmo.invalid";
-  try {
-    const url = new URL(value, origin);
-    if (url.origin !== origin) return "/";
-    // Normalizing dot segments can expose a leading // (e.g. /a/..//evil).
-    // Returning that pathname would create a new protocol-relative redirect.
-    if (url.pathname.startsWith("//")) return "/";
-    return url.pathname + url.search + url.hash;
-  } catch {
-    return "/";
-  }
 }
 
 /**

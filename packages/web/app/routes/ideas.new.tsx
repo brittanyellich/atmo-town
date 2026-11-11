@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Form, Link, useNavigation } from "react-router";
 import type { Route } from "./+types/ideas.new";
 import { ideaPath } from "~/lib/idea-path.server";
@@ -34,12 +34,7 @@ export async function action({ request }: Route.ActionArgs): Promise<ActionResul
     console.error("createRecord failed", err);
     return {
       errors: { form: "Your PDS didn't accept the idea. Try again in a moment." },
-      fields: {
-        title: parsed.record.title,
-        pitch: parsed.record.pitch,
-        link: parsed.record.links?.[0] ?? "",
-        tags: parsed.record.tags?.join(", ") ?? "",
-      },
+      fields: parsed.submittedFields,
     };
   }
 }
@@ -58,6 +53,12 @@ export default function PostIdea({ loaderData, actionData }: Route.ComponentProp
   const result = actionData as ActionResult | undefined;
   const fields = result && "fields" in result ? result.fields : undefined;
   const errors: IdeaErrors = result && "errors" in result ? result.errors : {};
+  const fieldErrors = (["title", "pitch", "link", "tags"] as const)
+    .flatMap((name) => errors[name] ? [{ name, message: errors[name] }] : []);
+  const summary = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (actionData && "errors" in actionData) summary.current?.focus();
+  }, [actionData]);
   const [title, setTitle] = useState(fields?.title ?? "");
   const [pitch, setPitch] = useState(fields?.pitch ?? "");
 
@@ -101,10 +102,25 @@ export default function PostIdea({ loaderData, actionData }: Route.ComponentProp
             <span>Posting as <strong>@{loaderData.handle}</strong></span>
           </div>
 
-          {errors.form && <p className="form-error" role="alert">{errors.form}</p>}
+          {Object.keys(errors).length > 0 && (
+            <div ref={summary} className="form-error error-summary" tabIndex={-1} role="group" aria-labelledby="error-summary-title">
+              <h2 id="error-summary-title">Your idea needs attention</h2>
+              {errors.form && <p>{errors.form}</p>}
+              {fieldErrors.length > 0 && <ul>
+                {fieldErrors.map(({ name, message }) => (
+                  <li key={name}>
+                    <a href={`#${name}`} onClick={(event) => {
+                      event.preventDefault();
+                      document.getElementById(name)?.focus();
+                    }}>{message}</a>
+                  </li>
+                ))}
+              </ul>}
+            </div>
+          )}
 
           <div className="field">
-            <label htmlFor="title">Title</label>
+            <label htmlFor="title">Title (required)</label>
             <input
               id="title"
               name="title"
@@ -120,7 +136,7 @@ export default function PostIdea({ loaderData, actionData }: Route.ComponentProp
           </div>
 
           <div className="field">
-            <label htmlFor="pitch">Pitch</label>
+            <label htmlFor="pitch">Pitch (required)</label>
             <p id="pitch-hint" className="hint">What it is, who it helps, and what kind of help you're looking for.</p>
             <textarea
               id="pitch"

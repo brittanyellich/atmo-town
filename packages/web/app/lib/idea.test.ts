@@ -14,6 +14,7 @@ describe("parseIdeaForm", () => {
     const result = parseIdeaForm(form({ title: "  Atmosphere Wrapped ", pitch: "A year-end recap." }), NOW);
     expect(result).toEqual({
       ok: true,
+      submittedFields: { title: "  Atmosphere Wrapped ", pitch: "A year-end recap.", link: "", tags: "" },
       record: {
         $type: "town.atmo.idea",
         title: "Atmosphere Wrapped",
@@ -157,7 +158,7 @@ describe("emoji-heavy input", () => {
       expect(Object.keys(result.errors)).toEqual(["tags"]);
       expect(result.errors.tags).toContain("Shorten comma-separated tag 4");
       expect(result.errors.tags).toContain("325 UTF-8 bytes exceeds the 320-byte limit");
-      expect(result.fields.tags).toBe(tags.trim());
+      expect(result.fields.tags).toBe(tags);
     }
   });
 });
